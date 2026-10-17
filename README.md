@@ -9,11 +9,11 @@
 
 ## 보고서와 테스트 증거
 
-- [구현 보고서 PDF — 26쪽](docs/report.pdf)
+- [구현 보고서 PDF](docs/report.pdf): 01~06절, T01~T17 결과는 04절
 - [편집용 Word 보고서](docs/report.docx)
-- [직접 촬영한 테스트 캡처 20장과 공식 검사 로그 2개](docs/evidence/manual/)
-- [공식 일반 검사 로그](docs/evidence/manual/M11-check-api-final.log)
-- [공식 만료 포함 검사 로그](docs/evidence/manual/M12-check-api-expiry.log)
+- [직접 촬영한 테스트 캡처와 공식 검사 로그](docs/evidence/manual/)
+- [최종 코드 기준 공식 일반 검사 로그](docs/evidence/manual/M24-check-api-final.log)
+- [최종 코드 기준 공식 만료 포함 검사 로그](docs/evidence/manual/M25-check-api-expiry.log)
 
 ## 기술 조합과 실행 환경
 
@@ -74,7 +74,7 @@ JWT-Assignment/
         └── manual/
 ```
 
-실행 시 생성되는 `node_modules/`, `dist/`, `target/`, `backend-spring/data/board.sqlite`는 제출 폴더에서 제외했다. 의존성 lock 파일과 Maven Wrapper는 유지했다.
+실행 시 생성되는 `node_modules/`, `dist/`, `target/`, `backend-spring/data/board.sqlite`와 실제 환경변수 파일은 `.gitignore`로 Git 추적에서 제외한다. 의존성 lock 파일과 Maven Wrapper는 저장소에 포함한다. 위 트리는 소스와 제출 문서를 기준으로 정리했다.
 
 ## 설치와 실행
 
@@ -82,7 +82,7 @@ JWT-Assignment/
 
 ### 1. 저장소 복제
 
-실제 저장소 URL을 `$repositoryUrl`에 넣고 실행한다.
+저장소를 복제한 뒤 생성된 폴더로 이동한다.
 
 ```powershell
 $repositoryUrl = 'https://github.com/abc202313746/JWT-Assignment.git'
@@ -96,7 +96,7 @@ Set-Location -LiteralPath '.\JWT-Assignment'
 
 ```powershell
 Set-Location -LiteralPath '.\backend-spring'
-.\mvnw.cmd package
+.\mvnw.cmd clean package
 
 $env:JWT_SECRET = node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))"
 $env:JWT_ISSUER = 'webservice-class'
@@ -135,7 +135,7 @@ npm.cmd run preview
 
 프론트와 백엔드를 실행한 각 터미널에서 `Ctrl+C`로 종료한다. npm 종료 확인이 나오면 `Y`를 입력한다.
 
-프론트 소스를 변경하면 `frontend-react/`에서 `npm.cmd run build` 후 `npm.cmd run preview`를 다시 실행한다. 백엔드 소스를 변경하면 `backend-spring/`에서 `.\mvnw.cmd package` 후 `java -jar target\jwt-board-1.0.0.jar`를 다시 실행한다. 새 터미널을 사용하면 백엔드 환경변수도 다시 설정한다.
+프론트 소스를 변경하면 `frontend-react/`에서 `npm.cmd run build` 후 `npm.cmd run preview`를 다시 실행한다. 백엔드 소스를 변경하면 `backend-spring/`에서 `.\mvnw.cmd clean package` 후 `java -jar target\jwt-board-1.0.0.jar`를 다시 실행한다. 새 터미널을 사용하면 백엔드 환경변수도 다시 설정한다.
 
 ## 테스트 계정과 DB
 
@@ -146,7 +146,7 @@ npm.cmd run preview
 
 계정과 PBKDF2 비밀번호 검증은 제공된 `Users.java`를 유지했다. 계정은 SQLite에 저장하지 않는다. 게시글은 `backend-spring/`에서 실행할 때 `backend-spring/data/board.sqlite`에 저장한다. DB 파일이 없으면 `DatabaseConfig.dataSource()`가 폴더를 만들고 `schema.sql`이 빈 `posts` 테이블을 생성한다.
 
-같은 DB 파일을 사용하는 서버 재시작에서는 게시글이 유지된다. `M07-1-restart-log.png`와 `M07-restart-after.png`에서 재시작 후 5번 글의 제목·본문·작성자 유지를 확인했으며, 재조회 응답은 `200`이다. 제출용 정리에서는 실습 DB를 삭제했으므로 다음 기동 시 새 DB의 `posts` 행 수는 `0`이다.
+같은 DB 파일을 사용하는 서버 재시작에서는 게시글이 유지된다. 2026년 10월 17일 새 폴더에서 서버를 종료하고 다시 실행한 뒤, 4173번을 통한 목록 조회에서 `200`과 게시글 2건을 확인했다. 재시작 전후 JSON 전체를 비교한 결과 ID·제목·본문·작성자·생성 시각·수정 시각이 일치했다. 증거는 [서버 재시작 로그](docs/evidence/manual/M28-1-restart-log.png), [재시작 전후 데이터 비교](docs/evidence/manual/M28-2-restart-data.png), [재시작 후 4173번 상세 조회](docs/evidence/manual/M28-3-restart-preview.png)다. DB 파일은 저장소에 포함하지 않으므로 새로 clone한 폴더에 DB가 없으면 게시글 0건으로 시작한다.
 
 DB를 초기화하려면 백엔드를 `Ctrl+C`로 종료한 뒤 프로젝트 루트에서 실행한다. 이 명령은 저장한 게시글을 삭제한다.
 
@@ -166,22 +166,24 @@ if (Test-Path -LiteralPath '.\backend-spring\data\board.sqlite') {
 | 글 작성·작성자 저장 | 완료 | `BoardController.create()`가 검증된 계정 ID를 `PostStore.create()`에 전달, 성공 `201` |
 | 본인 글 수정·삭제 | 완료 | `AuthService.assertOwner()`로 작성자 비교, 성공 `200`·`204`, 타인 변경 `403 FORBIDDEN` |
 | 만료·로그아웃·새로고침 | 완료 | `api.js`의 모듈 변수 `session` 사용, `clearSession()`으로 토큰과 계정 정보 초기화 |
-| 입력·오류 처리 | 완료 | `fields()`가 제목 1~100자·본문 1~5000자와 허용 필드 검사, 오류 `400 BAD_INPUT` |
+| 입력·오류 처리 | 완료 | `fields()`가 제목 1~100자·본문 1~5000자와 허용 필드를 검사한다. 비밀번호는 공백을 제거하지 않은 원문으로 1~128자를 검사하며 입력 오류는 `400 BAD_INPUT`이다. |
 | 게시글 데이터 유지 | 완료 | SQLite 파일 저장, 새로고침·서버 재시작 후 기존 글 조회 `200` |
 
-알려진 문제와 미완성 기능: 없음.
+기능 테스트에서 확인된 오류와 미완성 기능: 없음. 추가 시험의 미실행·미확인 사항은 아래와 보고서 04·05절에 구분했다.
 
 ## 테스트 방법과 결과
 
-2026년 10월 15일에 브라우저·빌드·서버 재시작을 확인했다. 10월 16일에 수업 공식 검사 도구와 로그아웃 후 요청을 직접 실행했다. T01~T17은 공식 검사 로그와 수동 캡처를 대조해 PASS로 기록했다. 별도 실행 기록이 없는 복합 조건은 보고서 04절에서 코드상 응답과 구분했다.
+2026년 10월 17일 원래 작업 폴더 바깥의 `JWT-Assignment-final-check`에 저장소를 clone하고 설치·빌드·실행과 추가 검증을 직접 수행했다. 테스트한 checkout은 `cb012af257d7b9c53c076c374e2494d775060e0a`다. 해당 커밋의 `backend-spring/`, `frontend-react/`, `tools/check_api.py`는 위에 기록한 테스트 기준 코드 커밋 `6ec886435f5909b0d8073be0e2b405cfef25b615`와 동일하다.
+
+`M01`~`M13`은 2026년 10월 15~16일의 비밀번호 빈 값 검사 수정 전 증거다. `M14`~`M28`은 비밀번호 빈 값 검사를 `checked.isEmpty()`로 수정한 최종 코드 기준의 10월 17일 증거다. 이전 캡처는 로그인·버튼 표시·새로고침·로그아웃 등 해당 화면 동작의 증거로 구분했다. T01~T17의 절차·실제 HTTP와 JSON `code`·판정·증거는 보고서 04절에 기록했다.
 
 일반 검사는 `TOKEN_TTL=90`인 백엔드를 실행한 뒤 별도 터미널의 프로젝트 루트에서 수행한다.
 
 ```powershell
-py tools/check_api.py --mode final
+py -u tools/check_api.py --mode final
 ```
 
-만료 검사는 백엔드를 종료하고 같은 백엔드 터미널에서 TTL을 바꿔 재시작한다.
+만료 검사는 백엔드를 `Ctrl+C`로 종료하고 같은 백엔드 터미널의 `backend-spring/`에서 TTL을 바꿔 재시작한다. 비밀 키와 DB 경로는 유지한다.
 
 ```powershell
 $env:TOKEN_TTL = '3'
@@ -191,7 +193,7 @@ java -jar target\jwt-board-1.0.0.jar
 별도 터미널의 프로젝트 루트에서 실행한다.
 
 ```powershell
-py tools/check_api.py --mode final --expiry
+py -u tools/check_api.py --mode final --expiry
 ```
 
 검사가 끝나면 백엔드를 종료하고 같은 백엔드 터미널에서 일반값으로 복구해 실행한다.
@@ -201,22 +203,34 @@ $env:TOKEN_TTL = '90'
 java -jar target\jwt-board-1.0.0.jar
 ```
 
-일반 검사 40건과 만료 포함 검사 48건이 통과했으며 두 실행의 종료 코드는 `0`이다. 공식 도구의 시험용 글은 정상 종료 과정에서 삭제한다. 브라우저 동작과 실제 서버 재시작은 별도로 확인했다.
+일반 검사는 `All 40 checks passed (final).`, 만료 포함 검사는 `All 48 checks passed (final).`을 출력했고 두 실행의 종료 코드는 `0`이다. 만료 포함 검사는 앞선 일반 항목을 포함하므로 서로 다른 시험 88건으로 합산하지 않는다. 공식 도구가 생성한 시험용 글은 정상 종료 과정에서 삭제한다. 제출한 M24·M25 로그는 `Out-File -Encoding utf8`로 저장했다.
 
-| 확인한 결과 | 증거 — `docs/evidence/manual/` 기준 |
+공식 검사에서는 정상 CRUD, 잘못된 계정, 무토큰·변조·만료 토큰, 타인 글 변경, 추가 작성자 필드, 입력 제한, 없는 글과 거부 후 데이터 불변을 확인했다. 생성 응답의 `201`과 `Location`, 삭제 응답의 `204`와 빈 본문, 보호 API 인증 실패의 `401`과 `WWW-Authenticate: Bearer`도 확인했다. 브라우저 상태 변화와 서버 재시작은 별도로 직접 수행했다.
+
+`403` 이후 로그인 유지 시험에서는 브라우저 Console에서 한 번의 `DELETE /api/posts/2` 요청 대상만 Alice의 `/api/posts/1`로 바꿨다. 실제 서버의 `403 FORBIDDEN` 응답을 기존 `api.js`와 `main.jsx`가 처리하도록 했고 Bob 로그인 유지와 오류 배너를 확인했다. 응답을 만들어 넣거나 제출 소스를 변경하지 않았다. `401` 이후 로그인 해제는 TTL 3초로 로그인하고 만료 후 내 정보 조회를 실행해 확인했다.
+
+추가 시험 중 `iss`·`aud` 불일치, 허용하지 않은 서명 알고리즘, 필수 클레임 누락·형식 오류를 각각 분리한 토큰 요청은 미실행이다. 비밀 키 누락·형식 오류·예시 키에 대한 서버 기동 실패의 실행 결과는 미확인이다. 해당 분기는 코드 확인과 실제 실행 결과를 구분해 보고서에 기록했다.
+
+| 직접 확인한 결과 | 증거 |
 |---|---|
-| 로그인 `200`, Bearer 요청 헤더, 토큰 마스킹 | `M01-login-response-masked.png`, `M01-1-bearer-request-masked.png` |
-| 등록 `201`, `Location: /api/posts/5`·`/api/posts/6` | `M02-alice-owner.png`, `M04-1-bob-create.png` |
-| 본인 수정 `200`, 삭제 `204`·빈 본문·목록 갱신 | `M02-1-owner-update.png`, `M04-2-bob-update.png`, `M04-3-bob-delete.png` |
-| 공백·길이·추가 필드 `400 BAD_INPUT`, 잘못된 계정 `401 INVALID_CREDENTIALS` | `M03-input-400.png`, `M11-check-api-final.log` |
-| 무토큰 `401 TOKEN_REQUIRED`, 변조 `401 INVALID_TOKEN` | `M11-check-api-final.png`, `M11-check-api-final.log` |
-| 만료 `401 TOKEN_EXPIRED`, 로그인 해제 | `M08-expired-401.png`, `M12-check-api-expiry.png`, `M12-check-api-expiry.log` |
-| 보호 API의 `401`에서 `WWW-Authenticate: Bearer` | `M11-check-api-final.log`, `M12-check-api-expiry.log`, `M13-1-logout-headers.png` |
-| Bob의 타인 글 수정·삭제 `403 FORBIDDEN`, 거부 후 재조회 일치 | `M11-check-api-final.log`의 Bob denied PUT·DELETE와 후속 비교 |
-| 없는 글 조회·정상 토큰 수정·삭제 `404 NOT_FOUND` | `M11-check-api-final.log`의 missing ID·missing protected PUT·DELETE |
-| 새로고침·서버 재시작 후 게시글 유지 | `M05-refresh.png`, `M07-1-restart-log.png`, `M07-restart-after.png` |
-| 로그아웃 후 Authorization 헤더 없음, `401 TOKEN_REQUIRED` | `M13-1-logout-headers.png`, `M13-1-logout-response.png` |
-| 빌드 종료 코드 `0`, 너비 900px·390px 화면 | `M00-build.png`, `M09-responsive-900.png`, `M10-responsive-mobile.png` |
+| 새 폴더 백엔드·프론트 설치와 빌드, 종료 코드 `0`, 4173번 공개 API `200` | [M14-clone-backend-build.png](docs/evidence/manual/M14-clone-backend-build.png), [M15-clone-backend-start.png](docs/evidence/manual/M15-clone-backend-start.png), [M16-clone-frontend-build.png](docs/evidence/manual/M16-clone-frontend-build.png), [M17-clone-preview-api.png](docs/evidence/manual/M17-clone-preview-api.png) |
+| 비밀번호 빈 문자열 `400 BAD_INPUT`, 공백 한 글자·정상 비밀번호 앞뒤 공백 `401 INVALID_CREDENTIALS`, 정상 입력 `200`·`expiresIn=90` | [M18-password-inputs.png](docs/evidence/manual/M18-password-inputs.png) |
+| `Authorization: Basic abc` 형식 오류 `401 TOKEN_REQUIRED`, `WWW-Authenticate: Bearer` | [M19-auth-header-format.png](docs/evidence/manual/M19-auth-header-format.png) |
+| 없는 글 수정: 무토큰 `401 TOKEN_REQUIRED`, 정상 토큰 `404 NOT_FOUND` | [M20-1-missing-no-token-401.png](docs/evidence/manual/M20-1-missing-no-token-401.png), [M20-2-missing-valid-token-404.png](docs/evidence/manual/M20-2-missing-valid-token-404.png) |
+| Alice 글 등록 `201`, `Location: /api/posts/1`, `authorId=1` | [M21-0-alice-post-create.png](docs/evidence/manual/M21-0-alice-post-create.png) |
+| 공백 제목 수정: Bob의 타인 글 `403 FORBIDDEN`, Alice의 본인 글 `400 BAD_INPUT`; 재조회 `200`, 데이터 일치 | [M21-1-bob-blank-title-403.png](docs/evidence/manual/M21-1-bob-blank-title-403.png), [M21-2-alice-blank-title-400.png](docs/evidence/manual/M21-2-alice-blank-title-400.png) |
+| Bob의 타인 글 수정·삭제 `403 FORBIDDEN`; 거부 후 재조회 `200`, 데이터 일치 | [M22-1-bob-update-403.png](docs/evidence/manual/M22-1-bob-update-403.png), [M22-2-bob-delete-403.png](docs/evidence/manual/M22-2-bob-delete-403.png) |
+| 화면에서 실제 `403 FORBIDDEN` 처리 후 Bob 로그인과 본인 글 수정·삭제 버튼 유지 | [M23-1-forbidden-session.png](docs/evidence/manual/M23-1-forbidden-session.png) |
+| 공식 일반 검사 40건 통과, 종료 코드 `0` | [M24-check-api-final.log](docs/evidence/manual/M24-check-api-final.log), [M24-check-api-final.png](docs/evidence/manual/M24-check-api-final.png) |
+| 공식 만료 포함 검사 48건 통과, 종료 코드 `0`; 보호 API 4종 `401 TOKEN_EXPIRED` | [M25-check-api-expiry.log](docs/evidence/manual/M25-check-api-expiry.log), [M25-check-api-expiry.png](docs/evidence/manual/M25-check-api-expiry.png) |
+| 만료된 Bob 토큰으로 Alice 글 수정 `401 TOKEN_EXPIRED`; 재조회 `200`, 데이터 일치 | [M26-expired-bob-edit-401.png](docs/evidence/manual/M26-expired-bob-edit-401.png) |
+| 내 정보 요청의 `401 TOKEN_EXPIRED`·`WWW-Authenticate: Bearer`, 화면 로그인 해제 | [M27-expired-session-cleared.png](docs/evidence/manual/M27-expired-session-cleared.png) |
+| TTL 90초 복구 후 서버 재시작, 게시글 2건과 모든 필드 유지, 4173번 상세 조회 `200` | [M28-1-restart-log.png](docs/evidence/manual/M28-1-restart-log.png), [M28-2-restart-data.png](docs/evidence/manual/M28-2-restart-data.png), [M28-3-restart-preview.png](docs/evidence/manual/M28-3-restart-preview.png) |
+| 로그인 `200`과 Bearer 요청 헤더, 토큰 마스킹 | [M01-login-response-masked.png](docs/evidence/manual/M01-login-response-masked.png), [M01-1-bearer-request-masked.png](docs/evidence/manual/M01-1-bearer-request-masked.png) |
+| 본인 글 수정 `200`, 삭제 `204`·빈 본문·목록 갱신 | [M02-1-owner-update.png](docs/evidence/manual/M02-1-owner-update.png), [M04-2-bob-update.png](docs/evidence/manual/M04-2-bob-update.png), [M04-3-bob-delete.png](docs/evidence/manual/M04-3-bob-delete.png) |
+| 입력 오류 `400 BAD_INPUT` 화면과 타인 글 수정·삭제 버튼 숨김 | [M03-input-400.png](docs/evidence/manual/M03-input-400.png), [M04-bob-no-actions.png](docs/evidence/manual/M04-bob-no-actions.png) |
+| 새로고침으로 로그인 해제 후 게시글 유지, 로그아웃 후 무토큰 요청 `401 TOKEN_REQUIRED` | [M05-refresh.png](docs/evidence/manual/M05-refresh.png), [M13-1-logout-headers.png](docs/evidence/manual/M13-1-logout-headers.png), [M13-1-logout-response.png](docs/evidence/manual/M13-1-logout-response.png) |
+| 너비 900px·390px 화면 | [M09-responsive-900.png](docs/evidence/manual/M09-responsive-900.png), [M10-responsive-mobile.png](docs/evidence/manual/M10-responsive-mobile.png) |
 
 ## 핵심 구현 흐름
 
@@ -226,9 +240,14 @@ java -jar target\jwt-board-1.0.0.jar
 
 ## AI 활용과 참고 자료
 
-AI 사용 여부: 사용. Codex로 JWT·권한 검사, 프론트엔드 인증 연결, 오류 표시·반응형 수정과 문서 작성을 진행했다. Claude Code의 게시판 화면 초안을 반영했다. 세부 모델명은 기록하지 않았다. 코드·문서의 AI 반영 범위는 보고서 02·05절에 구분했다.
+AI 사용 여부: 사용. Codex로 JWT 발급·검증과 작성자 권한 검사, 토큰 메모리 관리, HTTP 상태·오류 코드 표시, 반응형 스타일, 최종 검수와 추가 테스트 요청 명령, README·보고서 초안을 작성했다. Claude Code로 게시판 UI 초안을 작성했다. 사용한 세부 모델명과 최초 코드 작성 날짜는 확인되지 않아 추정하지 않았다.
 
-제공 코드의 CRUD·SQLite·PBKDF2 검증과 공식 `tools/check_api.py`는 유지했다. 빌드, 브라우저 확인, 서버 재시작, 공식 검사 도구 실행과 캡처는 직접 수행했다. `403` 이후 로그인 유지는 `api.js`의 조건문으로 확인한 내용과 직접 실행한 API 결과를 구분해 보고서에 기록했다.
+| 도구 | 실제 반영 위치 | 반영 방식과 직접 확인한 내용 |
+|---|---|---|
+| Codex | `AuthService.java`, `BoardController.java`, `frontend-react/src/api.js`, `main.jsx`, `style.css`, `README.md`, 보고서 02~06절 | 코드와 README는 AI가 작성·수정한 내용을 그대로 반영했다. 최종 검수에서 `fields()`의 비밀번호 빈 값 검사와 추가 테스트 계획을 제안받아 반영했다. 보고서는 초안을 보고 직접 작성·수정한 뒤 수정 후 반영으로 기록했으며 빌드·공식 검사·수동 요청·화면 확인과 캡처는 직접 수행했다. |
+| Claude Code | `frontend-react/src/main.jsx`, `style.css`의 게시판 UI 초안 | UI 초안은 Codex로 레이아웃·반응형 스타일·오류 표시를 수정한 뒤 반영했다. 900px·390px 화면은 직접 확인했다. |
+
+제공 코드의 CRUD·SQLite·PBKDF2 검증과 공식 `tools/check_api.py`는 유지했다. 10월 17일 최종 코드의 비밀번호 입력 4건, 헤더 형식 오류, 없는 글 수정의 인증 순서, 작성자 권한과 입력 검사의 순서, 실제 `403` 후 로그인 유지, 만료 `401` 후 로그인 해제, 서버 재시작 후 데이터 유지와 공식 검사 결과를 직접 확인했다. 파일별 작성 출처와 대표 사례 3건은 보고서 02·05절에 기록했다.
 
 - [수업 과제 공지](docs/01_과제공지.md): 필수 기능·제출물·JWT 기준
 - [API 명세](docs/02_API명세.md): 경로·JSON·HTTP 상태·응답 헤더
