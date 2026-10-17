@@ -2,6 +2,8 @@
 
 개발자와 시스템 운영자가 서버 오류·장애의 발생 환경, 증상, 원인 분석, 해결 방법을 기록하고 공유하는 게시판이다. 목록과 상세는 로그인 없이 조회한다. 로그인한 계정으로 글을 작성하고 본인 글을 수정·삭제한다. 타인 글 변경은 `AuthService.assertOwner()`에서 거부하며 응답은 `403 FORBIDDEN`이다.
 
+주요 기능: 제목·내용·작성자 검색, 장애 리포트 구역별 표시, 해결 방법 복사, 로그인과 작성자별 게시글 수정·삭제.
+
 - 학번: 202313746
 - 이름: 인숙영
 - GitHub 저장소 URL: https://github.com/abc202313746/JWT-Assignment.git
@@ -9,7 +11,7 @@
 
 ## 보고서와 테스트 증거
 
-- [구현 보고서 PDF](docs/report.pdf): 01~06절, T01~T17 결과는 04절
+- [구현 보고서 PDF](docs/report.pdf): 01절부터 06절까지 수록. T01부터 T17까지의 결과는 04절에 기록했다.
 - [편집용 Word 보고서](docs/report.docx)
 - [직접 촬영한 테스트 캡처와 공식 검사 로그](docs/evidence/manual/)
 - [최종 코드 기준 공식 일반 검사 로그](docs/evidence/manual/M24-check-api-final.log)
@@ -166,7 +168,7 @@ if (Test-Path -LiteralPath '.\backend-spring\data\board.sqlite') {
 | 글 작성·작성자 저장 | 완료 | `BoardController.create()`가 검증된 계정 ID를 `PostStore.create()`에 전달, 성공 `201` |
 | 본인 글 수정·삭제 | 완료 | `AuthService.assertOwner()`로 작성자 비교, 성공 `200`·`204`, 타인 변경 `403 FORBIDDEN` |
 | 만료·로그아웃·새로고침 | 완료 | `api.js`의 모듈 변수 `session` 사용, `clearSession()`으로 토큰과 계정 정보 초기화 |
-| 입력·오류 처리 | 완료 | `fields()`가 제목 1~100자·본문 1~5000자와 허용 필드를 검사한다. 비밀번호는 공백을 제거하지 않은 원문으로 1~128자를 검사하며 입력 오류는 `400 BAD_INPUT`이다. |
+| 입력·오류 처리 | 완료 | `fields()`가 제목과 본문의 길이, 허용 필드를 검사한다. 제목은 1자 이상 100자 이하, 본문은 1자 이상 5000자 이하를 받는다. 비밀번호는 공백을 제거하지 않은 원문 길이가 1자 이상 128자 이하인지 검사하며 입력 오류는 `400 BAD_INPUT`이다. |
 | 게시글 데이터 유지 | 완료 | SQLite 파일 저장, 새로고침·서버 재시작 후 기존 글 조회 `200` |
 
 기능 테스트에서 확인된 오류와 미완성 기능: 없음. 추가 시험의 미실행·미확인 사항은 아래와 보고서 04·05절에 구분했다.
@@ -175,7 +177,7 @@ if (Test-Path -LiteralPath '.\backend-spring\data\board.sqlite') {
 
 2026년 10월 17일 원래 작업 폴더 바깥의 `JWT-Assignment-final-check`에 저장소를 clone하고 설치·빌드·실행과 추가 검증을 직접 수행했다. 테스트한 checkout은 `cb012af257d7b9c53c076c374e2494d775060e0a`다. 해당 커밋의 `backend-spring/`, `frontend-react/`, `tools/check_api.py`는 위에 기록한 테스트 기준 코드 커밋 `6ec886435f5909b0d8073be0e2b405cfef25b615`와 동일하다.
 
-`M01`~`M13`은 2026년 10월 15~16일의 비밀번호 빈 값 검사 수정 전 증거다. `M14`~`M28`은 비밀번호 빈 값 검사를 `checked.isEmpty()`로 수정한 최종 코드 기준의 10월 17일 증거다. 이전 캡처는 로그인·버튼 표시·새로고침·로그아웃 등 해당 화면 동작의 증거로 구분했다. T01~T17의 절차·실제 HTTP와 JSON `code`·판정·증거는 보고서 04절에 기록했다.
+`M01`부터 `M13`까지의 증거는 2026년 10월 15일과 16일의 비밀번호 빈 값 검사 수정 전 증거다. `M14`부터 `M28`까지의 증거는 비밀번호 빈 값 검사를 `checked.isEmpty()`로 수정한 최종 코드 기준의 10월 17일 증거다. 이전 캡처는 로그인·버튼 표시·새로고침·로그아웃 등 해당 화면 동작의 증거로 구분했다. T01부터 T17까지의 절차·실제 HTTP와 JSON `code`·판정·증거는 보고서 04절에 기록했다.
 
 일반 검사는 `TOKEN_TTL=90`인 백엔드를 실행한 뒤 별도 터미널의 프로젝트 루트에서 수행한다.
 
@@ -244,7 +246,7 @@ AI 사용 여부: 사용. Codex로 JWT 발급·검증과 작성자 권한 검사
 
 | 도구 | 실제 반영 위치 | 반영 방식과 직접 확인한 내용 |
 |---|---|---|
-| Codex | `AuthService.java`, `BoardController.java`, `frontend-react/src/api.js`, `main.jsx`, `style.css`, `README.md`, 보고서 02~06절 | 코드와 README는 AI가 작성·수정한 내용을 그대로 반영했다. 최종 검수에서 `fields()`의 비밀번호 빈 값 검사와 추가 테스트 계획을 제안받아 반영했다. 보고서는 초안을 보고 직접 작성·수정한 뒤 수정 후 반영으로 기록했으며 빌드·공식 검사·수동 요청·화면 확인과 캡처는 직접 수행했다. |
+| Codex | `AuthService.java`, `BoardController.java`, `frontend-react/src/api.js`, `main.jsx`, `style.css`, `README.md`, 보고서 02절부터 06절까지 | 코드와 README는 AI가 작성·수정한 내용을 그대로 반영했다. 최종 검수에서 `fields()`의 비밀번호 빈 값 검사와 추가 테스트 계획을 제안받아 반영했다. 보고서는 초안을 보고 직접 작성·수정한 뒤 수정 후 반영으로 기록했으며 빌드·공식 검사·수동 요청·화면 확인과 캡처는 직접 수행했다. |
 | Claude Code | `frontend-react/src/main.jsx`, `style.css`의 게시판 UI 초안 | UI 초안은 Codex로 레이아웃·반응형 스타일·오류 표시를 수정한 뒤 반영했다. 900px·390px 화면은 직접 확인했다. |
 
 제공 코드의 CRUD·SQLite·PBKDF2 검증과 공식 `tools/check_api.py`는 유지했다. 10월 17일 최종 코드의 비밀번호 입력 4건, 헤더 형식 오류, 없는 글 수정의 인증 순서, 작성자 권한과 입력 검사의 순서, 실제 `403` 후 로그인 유지, 만료 `401` 후 로그인 해제, 서버 재시작 후 데이터 유지와 공식 검사 결과를 직접 확인했다. 파일별 작성 출처와 대표 사례 3건은 보고서 02·05절에 기록했다.
@@ -253,7 +255,17 @@ AI 사용 여부: 사용. Codex로 JWT 발급·검증과 작성자 권한 검사
 - [API 명세](docs/02_API명세.md): 경로·JSON·HTTP 상태·응답 헤더
 - [구현 체크리스트](docs/03_구현체크리스트.md): 인증·권한·화면 구현 항목
 - [보고서 양식](docs/04_보고서양식.docx): 보고서 구성·코드 설명·AI 출처 기록
-- [테스트 시나리오](docs/05_테스트시나리오.md): T01~T17과 HTTP 확인 기준
+- [테스트 시나리오](docs/05_테스트시나리오.md): T01부터 T17까지의 시나리오와 HTTP 확인 기준
 - [제출용 README 양식](docs/06_제출용_README.md): 이 문서의 구성
 - [로컬 실행 안내](docs/07_로컬실행안내.md): 설치·환경변수·빌드·실행 절차
 - [Pretendard 1.3.9 라이선스](https://github.com/orioncactus/pretendard/blob/v1.3.9/LICENSE): `frontend-react/src/main.jsx`에서 글꼴 CSS를 가져오고 `frontend-react/src/style.css`에서 화면 글꼴로 지정했다. SIL Open Font License 1.1(OFL-1.1).
+
+## 제출 확인
+
+- [v] README의 안내 문구를 실제 내용으로 교체했다.
+- [v] 새 폴더에 clone하여 README만으로 설치·환경설정·빌드·로컬 실행했다.
+- [v] 4173번 빌드 화면에서 API 연결과 전체 필수 기능을 확인했다.
+- [v] GitHub에서 보고서와 증거 링크가 열린다.
+- [v] 교수자가 저장소를 열람·복제할 수 있다.
+- [v] 비밀 키·실제 토큰·DB·node_modules·.venv·target을 커밋하지 않았다.
+- [v] 최종 push 후 저장소 URL과 제출 기준 커밋 SHA를 LMS에 제출했다.
