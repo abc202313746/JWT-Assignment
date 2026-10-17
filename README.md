@@ -5,7 +5,7 @@
 - 학번: 202313746
 - 이름: 인숙영
 - GitHub 저장소 URL: https://github.com/abc202313746/JWT-Assignment.git
-- 테스트 기준 코드 커밋 SHA: (직접 입력)
+- 테스트 기준 코드 커밋 SHA: 6ec886435f5909b0d8073be0e2b405cfef25b615
 
 ## 보고서와 테스트 증거
 
